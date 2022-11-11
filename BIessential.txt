@@ -1,0 +1,239 @@
+star schema
+
+--------------------------------------------------------------------
+dw - data warehouse database
+and normal database is central database
+
+download adventure works database by typing adventure works in google
+
+go on first link, scroll down and install adventureWorksDW2017.bak and adventureWorks2017.bak and restore it in ssms.
+
+create new project - analysis services multidimensional and data mining 
+
+right click data source -> new data source -> next -> new connection of DW -> no username password -> next -> finish.
+
+right click on data source view -> new data source view -> next -> select DW database -> select fact table (factInternetSales) and add related tables (remove fact table if came) -> next -> finish
+
+right click on cubes -> new cube -> next -> use existing table -> next -> select facttable only (using measures from the fact table) ->  next -> in dimensions uncheck fact table and done.
+
+
+-----------------------------------------------------------------
+reports
+--------------------------------------
+open power bi desktop -> get data -> text/csv -> load -> select charts and select asked columns
+(for kpi drag and drop columns)
+
+file-> new project -> integration services project
+--------------------------------------------------------------------
+ssis assignment
+-------------------------------------------------------------------
+
+questions:
+SSIS ASSIGNMENT
+
+Instructions
+1.	Supporting scripts have been provided wherever necessary.
+2.	All the levels should be attempted in given sequence only, i.e. Level 1 should be completed before moving on to Level 2.
+
+LEVEL-1
+Points Covered: Use of parameters, Data Flow task,  File System Task
+
+Task 1: Import data from .csv file to SQL table and archive that file to another location.
+•	Make use of parameters for – Input file path, SQL Server details, Archive file path, etc.
+https://www.youtube.com/watch?v=aMhwCepVpwE
+Task 2:  Copy all the files from one directory to another, if file already exists then skip.
+https://www.youtube.com/watch?v=IbieDAatf5M
+Task 3:  Export the data from multiple SQL tables to .csv file.
+
+LEVEL-2
+Points Covered:  Execute SQL Command, Look up, Derived Column, Multicast
+
+
+
+Task 1 : Import data from .csv/.txt/excel/xml file to SQL table,
+•	Sync the data into the table. 
+◦	If PRIMARY KEY already exists in the table then UPDATE the data in the table.
+◦	If new PRIMARY KEY is found in the file which does not exist in the table, INSERT the data into the table.
+◦	And if an PRIMARY KEY in Table does not exist in the file, DELETE the data from the table.
+•	Calculate Age based on DateOfBirth
+•	Address data should be imported in “Address” table.
+
+Flat file and oledb source path select and table select
+Data conversion for age calculate
+Sort only id  
+Merge join ma id connect karvani
+
+
+LEVEL-3
+Points Covered:  XML Source, OLEDB Destination
+
+Task 1 : Import data from XML file to SQL table.
+•	Create SQL table from XML file.
+•	Import data to SQL table
+
+LEVEL-4
+Points Covered:  Execute SQL Task, Script task,  Data Flow Task
+
+Task 1: Create SQL table from excel file. 
+•	First 4 rows having column name, data type & length.
+•	Then import data from excel. Data starts from Row No. 5
+
+
+answers:
+
+
+steps:
+
+take flat file source -> add connection manager -> take oledb destination and select table and mapp the columns
+
+move all file from one folder to other folder
+1>first in control flow 
+take Foreach Loop Container->double Click -> Collection ->select (Foreach File Enumerator)
+give source folder configuration name(E:\sem_9\BI\kruti_assignment\Level-1)
+into variable mappings tab => create variable 
+  variable    index
+  User:Variable 0
+2> take file system task into foreach loop container
+   general tab
+     isDestinationPathVariable  => False
+     DestinationConnection => create destination connection
+     select Operation
+     IsSourcePathVariable => true
+     SourceVariable => User:Variable
+     done
+3> right click on flat style task -> properties -> DelayValidation =>True
+
+
+run 
+
+third task -> take two different oledb sources -> and give them connection of two different tables (both should have same columns)
+
+take two sort task and connect one oledb source to one sort and that to another -> in sort select one column according to which sorting is to be done (for example in this task select name where columns are name, addresss, city, etc)
+
+take two data conversion -> connect it after sort individually and add data type as string (DT_STR) (or the datatype of database destination table) to all the columns (i.e. select all the columns) 
+
+take merge and connect both the ends of data conversion to merge and in merge double click -> mapp the columns (maybe by default) 
+
+connect it to a flat file destination -> browse a file and mapp variables
+====================================================
+LEVEL-2
+Points Covered:  Execute SQL Command, Look up, Derived Column, Multicast
+
+Task 1 : Import data from .csv/.txt/excel/xml file to SQL table,
+•	Sync the data into the table. 
+◦	If PRIMARY KEY already exists in the table then UPDATE the data in the table.
+◦	If new PRIMARY KEY is found in the file which does not exist in the table, INSERT the data into the table.
+◦	And if an PRIMARY KEY in Table does not exist in the file, DELETE the data from the table.
+•	Calculate Age based on DateOfBirth
+•	Address data should be imported in “Address” table.
+
+      
+
+1.take data flow task -> doble click
+
+2.take 
+    . flat file source
+    .OLEDB Source
+
+*Flat File Source Flow
+    .take data conversion and convert data accordingly
+      and give colum alias as csv ex:name(csv) 
+     .take multicast and derived column and dataconvrsion
+      one point of multicast goes into dataconversion(1) and second into derived column
+    Derived column : calculate age 
+    (
+      derived column name : age
+      derived column : add as new column
+       Expression :DATEDIFF("yy",[DateOFBirth(csv)],GETDATE())
+        Data type : four-byte signed integer
+     ) 
+
+    from data conversion(1)
+    take OLE DB Destination and add data of address field do not check other fields
+
+   continue to derived colum :
+     take one sort -> by id -> input from derived column
+     take another sort -> by id -> input from oledb data source
+    take Merge join -> input from sort and sort 1
+     in mearge join select rows which we need and (relation sort ID(csv) mapping Sort1 ID)
+ *take conditional split
+      take input from merge join
+       1>insert:ISNULL(ID) && !ISNULL([ID(csv)])
+       2> delete:ISNULL([ID(csv)]) && !ISNULL(ID)
+       3>update:Name != [Name(csv)] || Gender != [Gender(csv)]
+
+take one OLEDB Destination -> for insert
+   take two OLEDB Command -> for update and delte
+   in colum mapping select column required for doing opertaion
+    into component properties write commnd
+    delete:delete from LEVEL2_Name where ID=?
+    update:update LEVEL2_Name set Name=?,Gender=?,DateOfBirth=?,InvestAmount=? where ID=?
+   
+
+
+-----------------------------------------------------------------------
+
+internal exam gender conversion
+---------------------------------------------
+
+take flat file source, add new connection manager for a source file having data
+
+take derived column and connect falt file source to derived column, 
+take derived column name as gender, derived column as replace 'gender', expression as (drag and drop)  gender == "M" ? "male" : "female" everything else same
+take flat file destination and connect a connection manager, and connect derived column  with the falt file destination  
+
+Ama conditional split use Karine thase
+AbsenceDays > 7 condition aapvani
+AbsenceDays< 7 pan aavse
+
+------------------------------------------------------------------------
+create a ssis script task that displays a message "good morning vidhi" where names will be stored in an array list
+-----------------------------------------------------------------------
+
+create universal variable as "Employee" and datatype as object
+take script task -> double click -> In readWriteVariables add User::Employee -> select c# and click on edit script : add
+
+public void Main()
+		{
+            // TODO: Add your code here
+            ArrayList EmpNames = new ArrayList();
+            EmpNames.Add("Meera");
+            EmpNames.Add("Heena");
+            EmpNames.Add("Priya");
+            EmpNames.Add("Yesha");
+
+            Dts.Variables["User::Employee"].Value = EmpNames;
+
+            Dts.TaskResult = (int)ScriptResults.Success;
+		}
+
+click on ok
+
+take foreach loop container -> double click -> in collection select enumerator as foreach from variable enumerator and select Variable as User::Employee , variable mapping -> User::Employee Index 0 -> ok
+
+take script task inside foreach loop
+-> double click -> readOnlyVariables : User::Employee -> Edit script -> 
+public void Main()
+		{
+            // TODO: Add your code here
+            MessageBox.Show("hello ..."+Dts.Variables["User::Employee"].Value.ToString());
+			Dts.TaskResult = (int)ScriptResults.Success;
+		}
+
+ok
+
+-----------------------------------------------------------
+move all the files from one folder to folder in another drive
+-------------------------------------------------------
+
+take foreach loop -> double click -> in collection: enumerator as foreach file enumerator -> select source folder in enumerator configuration and files as *.*, and retrieve file name as fully qualified -> Variable mappings: User::Variable- Index 0 -> click ok
+
+take file system task inside foreach loop container -> double click -> operation: move file -> isSourcePathVariable: True -> Source variable: User::Variable else false
+
+right click on file system task-> properties -> delayValidation: true
+
+done;
+
+
+
+
